@@ -28,7 +28,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
     js_users = json.dumps(user_list)
     js_msgs = json.dumps(msg_list)
 
-    # 원본 사이트 개발자 도구와 100% 동일한 순수 SVG 구조
+    # 원본 순수 SVG 구조 유지 + 하단 시작 및 상향식 렌더링 적용
     svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
   <defs>
     <clipPath id="chat-view-area">
@@ -47,7 +47,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
   <!-- 배경 어둡게 -->
   <rect width="800" height="350" fill="#000000" opacity="0.45"/>
 
-  <!-- 2. 스크롤 채팅 영역 (JS가 이 그룹 내부에 text 노드를 실시간 생성) -->
+  <!-- 2. 스크롤 채팅 영역 -->
   <g clip-path="url(#chat-view-area)">
     <g id="chatScrollGroup" transform="translate(20, 0)">
     </g>
@@ -97,7 +97,9 @@ def get_live_overlay(users: str = None, msgs: str = None):
       const chatGroup = document.getElementById("chatScrollGroup");
       let chatHistory = [];
       const MAX_LINES = 7;
-      const START_Y = 85;
+      
+      // 채팅창 영역의 맨 아래 바닥 기준점 (입력창 바로 위인 Y=265 주변에서 위로 쌓이도록 설정)
+      const BOTTOM_Y = 265;
       const LINE_HEIGHT = 28;
 
       function render() {{
@@ -105,8 +107,9 @@ def get_live_overlay(users: str = None, msgs: str = None):
           chatGroup.removeChild(chatGroup.firstChild);
         }}
 
+        // 아래에서부터 위로 역순으로 배치하여 첫 채팅도 바닥에 붙게 만듦
         chatHistory.forEach((item, idx) => {{
-          const yPos = START_Y + (idx * LINE_HEIGHT);
+          const yPos = BOTTOM_Y - ((chatHistory.length - 1 - idx) * LINE_HEIGHT);
           const textEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
           textEl.setAttribute("x", "0");
           textEl.setAttribute("y", yPos);
