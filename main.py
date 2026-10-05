@@ -40,6 +40,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
             align-items: flex-start;
             height: 100vh;
         }}
+        /* 원본 모범답안 규격인 800x350에 맞춘 컨테이너 크기 조정 */
         .overlay-container {{
             width: 800px;
             height: 350px;
@@ -51,6 +52,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
             position: relative;
             overflow: hidden;
         }}
+        /* 배경 이미지 위에 어두운 오버레이를 얹어 채팅 가독성 확보 */
         .overlay-container::before {{
             content: "";
             position: absolute;
@@ -173,6 +175,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
             ["체리", "오늘 라이브 레전드 찍네ㅋㅋㅋ"]
         ];
 
+        // 파라미터가 있으면 파라미터 데이터를 사용하고, 없으면 기본 샘플 풀 사용
         const activeUsers = inputUsers.length > 0 ? inputUsers : samplePool.map(item => item[0]);
         const activeMsgs = inputMsgs.length > 0 ? inputMsgs : samplePool.map(item => item[1]);
 
@@ -189,13 +192,4 @@ def get_live_overlay(users: str = None, msgs: str = None):
     </script>
 </body>
 </html>"""
-
-    # 플랫폼이 HTML을 정상적으로 불러오면서 브라우저가 이미지 태그로 렌더링할 수 있도록 지원하는 헤더 설정
-    return Response(
-        content=html_content, 
-        media_type="text/html",
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Cache-Control": "no-cache"
-        }
-    )
+    return Response(content=html_content, media_type="text/html")
