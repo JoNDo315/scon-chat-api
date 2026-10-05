@@ -1,4 +1,4 @@
- from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response
 from PIL import Image, ImageDraw, ImageFont
 import urllib.parse
 import os
@@ -36,7 +36,7 @@ def generate_chat_image(users: str, msgs: str):
         try:
             bg = Image.open("bg.png").convert("RGBA")
             bg = bg.resize((width, height))
-            darken = Image.new("RGBA", (width, height), (15, 15, 15, 210)) # 투명도 조절로 배경이 은은하게 보이도록 설정
+            darken = Image.new("RGBA", (width, height), (15, 15, 15, 200))
             image = Image.alpha_composite(bg, darken)
         except:
             image = Image.new("RGBA", (width, height), (20, 20, 20, 255))
@@ -45,16 +45,21 @@ def generate_chat_image(users: str, msgs: str):
         
     draw = ImageDraw.Draw(image)
     
-    # 폰트 로드 (기본 폰트 안전 장치)
-    try:
+    # 업로드한 한글 폰트 로드 (font.ttf)
+    font_path = "font.ttf"
+    if os.path.exists(font_path):
+        font = ImageFont.truetype(font_path, 13)
+        font_bold = ImageFont.truetype(font_path, 13)
+        font_small = ImageFont.truetype(font_path, 11)
+    else:
         font = ImageFont.load_default()
-    except:
-        font = None
+        font_bold = font
+        font_small = font
         
     # --- [상단 LIVE 방송국 UI 바] ---
     draw.rectangle([0, 0, width, 40], fill=(25, 25, 25))
     draw.rounded_rectangle([15, 10, 50, 30], radius=4, fill=(204, 0, 0))
-    draw.text((21, 13), "LIVE", fill=(255, 255, 255))
+    draw.text((21, 13), "LIVE", fill=(255, 255, 255), font=font_bold)
     
     # --- [실시간 채팅 목록] ---
     y_offset = 55
@@ -64,21 +69,26 @@ def generate_chat_image(users: str, msgs: str):
         
         if username == "System":
             text_full = f"System: {message}"
-            draw.text((15, y_offset), text_full, fill=(170, 170, 170))
+            draw.text((15, y_offset), text_full, fill=(170, 170, 170), font=font)
         else:
             name_color = get_color_for_name(username)
-            draw.text((15, y_offset), username, fill=name_color)
+            draw.text((15, y_offset), username, fill=name_color, font=font_bold)
             
-            name_w = len(username) * 7
-            draw.text((15 + name_w + 8, y_offset), f": {message}", fill=(255, 255, 255))
+            # 폰트의 getlength를 이용해 닉네임 길이에 맞춰 대사 위치 정렬
+            try:
+                name_w = font_bold.getlength(username)
+            except:
+                name_w = len(username) * 7
+                
+            draw.text((15 + name_w + 8, y_offset), f": {message}", fill=(255, 255, 255), font=font)
             
         y_offset += 32
         
     # --- [하단 채팅 입력창] ---
     input_box_y = height - 42
     draw.rounded_rectangle([15, input_box_y, width - 15, height - 10], radius=18, fill=(35, 35, 35))
-    draw.text((30, input_box_y + 8), "채팅에 참여하세요...", fill=(150, 150, 150))
-    draw.text((width - 45, input_box_y + 7), "♥", fill=(255, 90, 120))
+    draw.text((30, input_box_y + 8), "채팅에 참여하세요...", fill=(150, 150, 150), font=font_small)
+    draw.text((width - 45, input_box_y + 7), "♥", fill=(255, 90, 120), font=font_bold)
 
     import io
     buf = io.BytesIO()
