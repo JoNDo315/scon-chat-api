@@ -2,20 +2,45 @@ from fastapi import FastAPI, Response
 import urllib.parse
 import os
 import base64
-import json
 
 app = FastAPI()
 
 @app.get("/")
 def get_live_overlay(users: str = None, msgs: str = None):
-    if not users or not msgs:
-        user_list = []
-        msg_list = []
-    else:
-        user_list = [urllib.parse.unquote(u).strip() for u in users.split(",") if u.strip()]
-        msg_list = [urllib.parse.unquote(m).strip() for m in msgs.split(",") if m.strip()]
+    # 기본 샘플 풀
+    sample_pool = [
+        ("System", "채팅에 참여해 스콘즈를 응원하세요!"),
+        ("스콘팬1", "오늘 의상 진짜 미쳤다ㅠㅠㅠ"),
+        ("김스콘", "실시간으로 보고 있는데 너무 떨려"),
+        ("토끼단", "스콘즈 화이팅!! 언제나 응원해"),
+        ("모찌", "노래 선곡 미쳤다 진짜"),
+        ("별빛스콘", "댓글 읽어주세요 제발요ㅠㅠ"),
+        ("체리", "오늘 라이브 레전드 찍네ㅋㅋㅋ")
+    ]
 
-    # 1. 배경 이미지 (bg.png)
+    palette = ["#FF6E6E", "#6EE273", "#73BEFF", "#FFC850", "#DC82FF", "#50E6D2", "#FF9650"]
+    def get_color(name):
+        h = 0
+        for ch in name:
+            h = ord(ch) + ((h << 5) - h)
+        return palette[abs(h) % len(palette)]
+
+    # 유저 입력 파라미터 파싱
+    chat_list = []
+    if users and msgs:
+        u_arr = [urllib.parse.unquote(u).strip() for u in users.split(",") if u.strip()]
+        m_arr = [urllib.parse.unquote(m).strip() for m in msgs.split(",") if m.strip()]
+        for u, m in zip(u_arr, m_arr):
+            chat_list.append((u, m))
+
+    if not chat_list:
+        chat_list = sample_pool
+
+    # 무한 루프 애니메이션을 위해 2회 연속 배치
+    looped_chats = chat_list + chat_list
+    total_items = len(chat_list)
+
+    # 1. 배경 이미지
     bg_tag = '<rect width="800" height="350" fill="#141414"/>'
     if os.path.exists("bg.png"):
         try:
@@ -25,10 +50,32 @@ def get_live_overlay(users: str = None, msgs: str = None):
         except Exception:
             pass
 
-    js_users = json.dumps(user_list)
-    js_msgs = json.dumps(msg_list)
+    # 2. 텍스트 노드 생성 (하단 기준 배치)
+    LINE_HEIGHT = 28
+    START_Y = 265  # 입력창 바로 위 기준점
+    
+    text_elements = []
+    for i, (u, m) in enumerate(looped_chats):
+        y_pos = START_Y + (i * LINE_HEIGHT)
+        if u == "System":
+            text_elements.append(
+                f'<text x="0" y="{y_pos}" class="chat-text" fill="#AAAAAA">System: {m}</text>'
+            )
+        else:
+            col = get_color(u)
+            text_elements.append(
+                f'<text x="0" y="{y_pos}" class="chat-text">'
+                f'<tspan fill="{col}" font-weight="bold">{u}</tspan>'
+                f'<tspan fill="#FFFFFF">: {m}</tspan>'
+                f'</text>'
+            )
 
-    # 원본 순수 SVG 구조 유지 + 하단 시작 및 상향식 렌더링 적용
+    items_svg = "\n    ".join(text_elements)
+    
+    # 스크롤 거리 및 애니메이션 시간 계산
+    scroll_distance = total_items * LINE_HEIGHT
+    anim_duration = max(8, total_items * 2.2)
+
     svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
   <defs>
     <clipPath id="chat-view-area">
@@ -39,17 +86,28 @@ def get_live_overlay(users: str = None, msgs: str = None):
         font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', -apple-system, sans-serif;
         font-size: 14px;
       }}
+      @keyframes autoChatScroll {{
+        0% {{
+          transform: translateY(0px);
+        }}
+        100% {{
+          transform: translateY(-{scroll_distance}px);
+        }}
+      }}
+      #chatScrollGroup {{
+        animation: autoChatScroll {anim_duration}s linear infinite;
+      }}
     </style>
   </defs>
 
   <!-- 1. 배경 -->
   {bg_tag}
-  <!-- 배경 어둡게 -->
   <rect width="800" height="350" fill="#000000" opacity="0.45"/>
 
-  <!-- 2. 스크롤 채팅 영역 -->
+  <!-- 2. 스크롤 채팅 영역 (CSS 무한 롤링) -->
   <g clip-path="url(#chat-view-area)">
     <g id="chatScrollGroup" transform="translate(20, 0)">
+    {items_svg}
     </g>
   </g>
 
@@ -65,98 +123,6 @@ def get_live_overlay(users: str = None, msgs: str = None):
     <text x="22" y="26" fill="#888888" font-family="'Malgun Gothic', sans-serif" font-size="13px">채팅에 참여하세요...</text>
     <text x="725" y="27" fill="#FF5A78" font-family="'Malgun Gothic', sans-serif" font-weight="bold" font-size="16px">♥</text>
   </g>
-
-  <script type="text/javascript">
-    <![CDATA[
-    (function() {{
-      const inputUsers = {js_users};
-      const inputMsgs = {js_msgs};
-
-      const samplePool = [
-        ["System", "채팅에 참여해 스콘즈를 응원하세요!"],
-        ["스콘팬1", "오늘 의상 진짜 미쳤다ㅠㅠㅠ"],
-        ["김스콘", "실시간으로 보고 있는데 너무 떨려"],
-        ["토끼단", "스콘즈 화이팅!! 언제나 응원해"],
-        ["모찌", "노래 선곡 미쳤다 진짜"],
-        ["별빛스콘", "댓글 읽어주세요 제발요ㅠㅠ"],
-        ["체리", "오늘 라이브 레전드 찍네ㅋㅋㅋ"]
-      ];
-
-      const activeUsers = inputUsers.length > 0 ? inputUsers : samplePool.map(i => i[0]);
-      const activeMsgs = inputMsgs.length > 0 ? inputMsgs : samplePool.map(i => i[1]);
-
-      const palette = ["#FF6E6E", "#6EE273", "#73BEFF", "#FFC850", "#DC82FF", "#50E6D2", "#FF9650"];
-      function getColor(name) {{
-        let hash = 0;
-        for (let i = 0; i < name.length; i++) {{
-          hash = name.charCodeAt(i) + ((hash << 5) - hash);
-        }}
-        return palette[Math.abs(hash) % palette.length];
-      }}
-
-      const chatGroup = document.getElementById("chatScrollGroup");
-      let chatHistory = [];
-      const MAX_LINES = 7;
-      
-      // 채팅창 영역의 맨 아래 바닥 기준점 (입력창 바로 위인 Y=265 주변에서 위로 쌓이도록 설정)
-      const BOTTOM_Y = 265;
-      const LINE_HEIGHT = 28;
-
-      function render() {{
-        while (chatGroup.firstChild) {{
-          chatGroup.removeChild(chatGroup.firstChild);
-        }}
-
-        // 아래에서부터 위로 역순으로 배치하여 첫 채팅도 바닥에 붙게 만듦
-        chatHistory.forEach((item, idx) => {{
-          const yPos = BOTTOM_Y - ((chatHistory.length - 1 - idx) * LINE_HEIGHT);
-          const textEl = document.createElementNS("http://www.w3.org/2000/svg", "text");
-          textEl.setAttribute("x", "0");
-          textEl.setAttribute("y", yPos);
-          textEl.setAttribute("class", "chat-text");
-
-          if (item.u === "System") {{
-            textEl.setAttribute("fill", "#AAAAAA");
-            textEl.textContent = "System: " + item.m;
-          }} else {{
-            const userSpan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-            userSpan.setAttribute("fill", getColor(item.u));
-            userSpan.setAttribute("font-weight", "bold");
-            userSpan.textContent = item.u;
-
-            const msgSpan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
-            msgSpan.setAttribute("fill", "#FFFFFF");
-            msgSpan.textContent = ": " + item.m;
-
-            textEl.appendChild(userSpan);
-            textEl.appendChild(msgSpan);
-          }}
-          chatGroup.appendChild(textEl);
-        }});
-      }}
-
-      function pushChat(u, m) {{
-        chatHistory.push({{ u, m }});
-        if (chatHistory.length > MAX_LINES) {{
-          chatHistory.shift();
-        }}
-        render();
-      }}
-
-      let curIdx = 0;
-      const initCount = Math.min(4, activeUsers.length);
-      for (let j = 0; j < initCount; j++) {{
-        pushChat(activeUsers[curIdx], activeMsgs[curIdx]);
-        curIdx = (curIdx + 1) % activeUsers.length;
-      }}
-
-      setInterval(() => {{
-        pushChat(activeUsers[curIdx], activeMsgs[curIdx]);
-        curIdx = (curIdx + 1) % activeUsers.length;
-      }}, 2500);
-    }})();
-    ]]>
-  </script>
 </svg>'''
 
     return Response(
