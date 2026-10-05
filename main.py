@@ -6,28 +6,28 @@ app = FastAPI()
 
 @app.get("/")
 def get_live_overlay():
-    # 배경 이미지(bg.png) 처리
-    bg_css = "background-color: #141414;"
+    # 배경 이미지(bg.png) 비율 유지 및 깔끔한 배치 처리
+    bg_style = "background-color: #141414;"
     if os.path.exists("bg.png"):
         try:
             with open("bg.png", "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
-                bg_css = f"background-image: url('data:image/png;base64,{encoded_string}'); background-size: cover; background-position: center;"
+                bg_style = f"background-image: url('data:image/png;base64,{encoded_string}'); background-repeat: no-repeat; background-position: center; background-size: contain;"
         except:
             pass
 
-    # 원본 예시 사이트처럼 완벽한 레이아웃과 애니메이션을 갖춘 최종 완성형 오버레이 HTML
     html_content = f"""
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Scon Live Overlay</title>
+    <title>Scon Live Chat</title>
     <style>
         body {{
             margin: 0;
             padding: 0;
-            {bg_css}
+            {bg_style}
+            background-color: #0d0d0d;
             font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
             overflow: hidden;
             display: flex;
@@ -36,28 +36,29 @@ def get_live_overlay():
             height: 100vh;
         }}
         .overlay-container {{
-            width: 600px;
-            background: rgba(0, 0, 0, 0.65);
+            width: 420px;
+            background: rgba(0, 0, 0, 0.75);
             box-sizing: border-box;
-            padding: 16px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             position: relative;
+            border-radius: 8px;
+            margin: 20px;
         }}
         .live-badge {{
             display: inline-block;
-            background-color: #CC0000;
+            background-color: #FF2D55;
             color: white;
             font-weight: bold;
             font-size: 11px;
             padding: 3px 8px;
             border-radius: 4px;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             width: fit-content;
-            letter-spacing: 0.5px;
         }}
         .chat-scroll-box {{
-            height: 196px;
+            height: 210px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -71,7 +72,7 @@ def get_live_overlay():
             word-break: break-all;
         }}
         @keyframes fadeInSlide {{
-            0% {{ opacity: 0; transform: translateY(12px); }}
+            0% {{ opacity: 0; transform: translateY(10px); }}
             100% {{ opacity: 1; transform: translateY(0); }}
         }}
         .system-msg {{
@@ -84,10 +85,10 @@ def get_live_overlay():
             color: #FFFFFF;
         }}
         .input-box {{
-            margin-top: 16px;
-            background: rgba(32, 32, 32, 0.85);
-            border-radius: 18px;
-            padding: 9px 16px;
+            margin-top: 12px;
+            background: rgba(40, 40, 40, 0.9);
+            border-radius: 16px;
+            padding: 8px 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -138,23 +139,35 @@ def get_live_overlay():
 
             chatBox.appendChild(div);
 
+            // 최대 7개 메시지만 유지하고 위로 밀려나며 삭제
             if (chatBox.children.length > 7) {{
                 chatBox.removeChild(chatBox.children[0]);
             }}
         }}
 
-        // 원본 예시 사이트처럼 즉시 깔끔하게 렌더링되도록 기본 테스트 시퀀스 탑재
-        const demoData = [
+        // 모범 사이트처럼 자연스러운 순환 테스트 시뮬레이션 데이터 풀
+        const samplePool = [
             ["System", "채팅에 참여해 스콘즈를 응원하세요!"],
             ["스콘팬1", "오늘 의상 진짜 미쳤다ㅠㅠㅠ"],
             ["김스콘", "실시간으로 보고 있는데 너무 떨려"],
-            ["토끼단", "스콘즈 화이팅!! 언제나 응원해"]
+            ["토끼단", "스콘즈 화이팅!! 언제나 응원해"],
+            ["모찌", "노래 선곡 미쳤다 진짜"],
+            ["별빛스콘", "댓글 읽어주세요 제발요ㅠㅠ"],
+            ["체리", "오늘 라이브 레전드 찍네ㅋㅋㅋ"]
         ];
 
         let index = 0;
-        demoData.forEach(item => {{
-            appendChat(item[0], item[1]);
-        }});
+        // 초기 4개 먼저 채우기
+        for (let j = 0; j < 4; j++) {{
+            appendChat(samplePool[index][0], samplePool[index][1]);
+            index = (index + 1) % samplePool.length;
+        }}
+
+        // 원본처럼 멈추지 않고 일정 시간마다 새로운 채팅이 순환하며 올라오도록 설정
+        setInterval(() => {{
+            appendChat(samplePool[index][0], samplePool[index][1]);
+            index = (index + 1) % samplePool.length;
+        }, 2500);
     </script>
 </body>
 </html>
