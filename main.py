@@ -31,7 +31,6 @@ def generate_chat_image(users: str, msgs: str):
     chat_height = len(user_list) * 35
     height = 95 + chat_height + 50
     
-    # 배경 이미지 불러오기 및 어두운 필터 합성
     if os.path.exists("bg.png"):
         try:
             bg = Image.open("bg.png").convert("RGBA")
@@ -45,7 +44,6 @@ def generate_chat_image(users: str, msgs: str):
         
     draw = ImageDraw.Draw(image)
     
-    # 업로드한 한글 폰트 로드 (font.ttf)
     font_path = "font.ttf"
     if os.path.exists(font_path):
         font = ImageFont.truetype(font_path, 13)
@@ -56,12 +54,10 @@ def generate_chat_image(users: str, msgs: str):
         font_bold = font
         font_small = font
         
-    # --- [상단 LIVE 방송국 UI 바] ---
     draw.rectangle([0, 0, width, 40], fill=(25, 25, 25))
     draw.rounded_rectangle([15, 10, 50, 30], radius=4, fill=(204, 0, 0))
     draw.text((21, 13), "LIVE", fill=(255, 255, 255), font=font_bold)
     
-    # --- [실시간 채팅 목록] ---
     y_offset = 55
     for u, m in zip(user_list, msg_list):
         username = urllib.parse.unquote(u).strip()
@@ -74,7 +70,6 @@ def generate_chat_image(users: str, msgs: str):
             name_color = get_color_for_name(username)
             draw.text((15, y_offset), username, fill=name_color, font=font_bold)
             
-            # 폰트의 getlength를 이용해 닉네임 길이에 맞춰 대사 위치 정렬
             try:
                 name_w = font_bold.getlength(username)
             except:
@@ -84,7 +79,6 @@ def generate_chat_image(users: str, msgs: str):
             
         y_offset += 32
         
-    # --- [하단 채팅 입력창] ---
     input_box_y = height - 42
     draw.rounded_rectangle([15, input_box_y, width - 15, height - 10], radius=18, fill=(35, 35, 35))
     draw.text((30, input_box_y + 8), "채팅에 참여하세요...", fill=(150, 150, 150), font=font_small)
