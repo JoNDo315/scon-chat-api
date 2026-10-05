@@ -27,7 +27,6 @@ def get_live_overlay(users: str = None, msgs: str = None):
     js_user_list = json.dumps(user_list)
     js_msg_list = json.dumps(msg_list)
 
-    # 원본 HTML/CSS/JS 및 samplePool을 단 한 줄도 누락하지 않고 그대로 보존한 채 SVG로 래핑
     svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
   <foreignObject width="100%" height="100%">
     <div xmlns="http://www.w3.org/1999/xhtml">
@@ -69,7 +68,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
         .live-badge {{
             display: inline-block;
             background-color: #FF2D55;
-            color: white;
+            color: #FFFFFF !important;
             font-weight: bold;
             font-size: 11px;
             padding: 4px 10px;
@@ -95,15 +94,6 @@ def get_live_overlay(users: str = None, msgs: str = None):
             0% {{ opacity: 0; transform: translateY(10px); }}
             100% {{ opacity: 1; transform: translateY(0); }}
         }}
-        .system-msg {{
-            color: #AAAAAA;
-        }}
-        .username {{
-            font-weight: bold;
-        }}
-        .message-text {{
-            color: #FFFFFF;
-        }}
         .input-box {{
             margin-top: 14px;
             background: rgba(32, 32, 32, 0.85);
@@ -114,11 +104,11 @@ def get_live_overlay(users: str = None, msgs: str = None):
             justify-content: space-between;
         }}
         .input-placeholder {{
-            color: #888888;
+            color: #888888 !important;
             font-size: 13px;
         }}
         .heart {{
-            color: #FF5A78;
+            color: #FF5A78 !important;
             font-weight: bold;
             font-size: 16px;
         }}
@@ -154,10 +144,10 @@ def get_live_overlay(users: str = None, msgs: str = None):
               div.className = 'chat-item';
 
               if (u === "System") {{
-                  div.innerHTML = '<span class="system-msg">System: ' + m + '</span>';
+                  div.innerHTML = '<span style="color: #AAAAAA !important;">System: ' + m + '</span>';
               }} else {{
                   const color = getColor(u);
-                  div.innerHTML = '<span class="username" style="color: ' + color + ';">' + u + '</span><span class="message-text">: ' + m + '</span>';
+                  div.innerHTML = '<span style="color: ' + color + ' !important; font-weight: bold;">' + u + '</span><span style="color: #FFFFFF !important;">: ' + m + '</span>';
               }}
 
               chatBox.appendChild(div);
@@ -167,7 +157,6 @@ def get_live_overlay(users: str = None, msgs: str = None):
               }}
           }}
 
-          // 파라미터가 없을 때 화면을 정상적으로 채워줄 기본 샘플 풀 온전 복원
           const samplePool = [
               ["System", "채팅에 참여해 스콘즈를 응원하세요!"],
               ["스콘팬1", "오늘 의상 진짜 미쳤다ㅠㅠㅠ"],
