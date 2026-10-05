@@ -27,7 +27,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
     js_input_users = json.dumps(user_list)
     js_input_msgs = json.dumps(msg_list)
 
-    # f-string 충돌을 원천 차단한 안전한 템플릿 구조
+    # 파이썬 f-string 중괄호 간섭을 완전히 제거한 순수 템플릿
     svg_template = """<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
   <foreignObject width="100%" height="100%">
     <div xmlns="http://www.w3.org/1999/xhtml">
@@ -82,7 +82,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: flex-end;
+            justify-content: flex-end; /* 바닥부터 착 달라붙게 정렬 */
             gap: 8px;
         }
         .chat-item {
@@ -90,19 +90,11 @@ def get_live_overlay(users: str = None, msgs: str = None):
             line-height: 1.4;
             animation: fadeInSlide 0.3s ease-out forwards;
             word-break: break-all;
+            color: #FFFFFF !important; /* 기본 글자 흰색 강제 */
         }
         @keyframes fadeInSlide {
             0% { opacity: 0; transform: translateY(10px); }
             100% { opacity: 1; transform: translateY(0); }
-        }
-        .system-msg {
-            color: #AAAAAA !important;
-        }
-        .username {
-            font-weight: bold;
-        }
-        .message-text {
-            color: #FFFFFF !important;
         }
         .input-box {
             margin-top: 14px;
@@ -155,10 +147,11 @@ def get_live_overlay(users: str = None, msgs: str = None):
               div.className = 'chat-item';
 
               if (u === "System") {
-                  div.innerHTML = '<span class="system-msg" style="color: #AAAAAA !important;">System: ' + m + '</span>';
+                  div.innerHTML = '<span style="color: #AAAAAA !important;">System: ' + m + '</span>';
               } else {
                   const color = getColor(u);
-                  div.innerHTML = '<span class="username" style="color: ' + color + ' !important; font-weight: bold;">' + u + '</span><span class="message-text" style="color: #FFFFFF !important;">: ' + m + '</span>';
+                  // color 스타일과 font 태그를 동시에 주입하여 SVG 환경 내 색상 증발 방지
+                  div.innerHTML = '<font color="' + color + '"><strong style="color: ' + color + ' !important;">' + u + '</strong></font><span style="color: #FFFFFF !important;">: ' + m + '</span>';
               }
 
               chatBox.appendChild(div);
@@ -197,7 +190,6 @@ def get_live_overlay(users: str = None, msgs: str = None):
   </foreignObject>
 </svg>"""
 
-    # 파이썬 f-string 간섭 없이 깔끔하게 대치
     svg_content = svg_template.replace("__BG_STYLE__", bg_style)\
                                .replace("__INPUT_USERS__", js_input_users)\
                                .replace("__INPUT_MSGS__", js_input_msgs)
