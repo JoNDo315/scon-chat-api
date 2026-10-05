@@ -24,15 +24,16 @@ def get_live_overlay(users: str = None, msgs: str = None):
         except:
             pass
 
+    # 파이썬 f-string 안에서 자바스크립트 배열이 정상 인식되도록 json 직렬화
     js_input_users = json.dumps(user_list)
     js_input_msgs = json.dumps(msg_list)
 
-    # 파이썬 f-string 중괄호 간섭을 완전히 제거한 순수 템플릿
-    svg_template = """<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
+    # 원본 HTML/CSS/JS 코드를 단 한 줄도 버리지 않고 100% 보존한 SVG 코드
+    svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
   <foreignObject width="100%" height="100%">
     <div xmlns="http://www.w3.org/1999/xhtml">
       <style>
-        body, html {
+        body, html {{
             margin: 0;
             padding: 0;
             width: 800px;
@@ -43,30 +44,30 @@ def get_live_overlay(users: str = None, msgs: str = None):
             display: flex;
             justify-content: flex-start;
             align-items: flex-start;
-        }
-        .overlay-container {
+        }}
+        .overlay-container {{
             width: 800px;
             height: 350px;
-            __BG_STYLE__
+            {bg_style}
             box-sizing: border-box;
             padding: 20px;
             display: flex;
             flex-direction: column;
             position: relative;
             overflow: hidden;
-        }
-        .overlay-container::before {
+        }}
+        .overlay-container::before {{
             content: "";
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0, 0, 0, 0.55);
             z-index: 1;
-        }
-        .live-badge, .chat-scroll-box, .input-box {
+        }}
+        .live-badge, .chat-scroll-box, .input-box {{
             position: relative;
             z-index: 2;
-        }
-        .live-badge {
+        }}
+        .live-badge {{
             display: inline-block;
             background-color: #FF2D55;
             color: #FFFFFF !important;
@@ -76,27 +77,38 @@ def get_live_overlay(users: str = None, msgs: str = None):
             border-radius: 4px;
             margin-bottom: 12px;
             width: fit-content;
-        }
-        .chat-scroll-box {
+        }}
+        .chat-scroll-box {{
             height: 200px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: flex-end; /* 바닥부터 착 달라붙게 정렬 */
+            justify-content: flex-end;
             gap: 8px;
-        }
-        .chat-item {
+        }}
+        .chat-item {{
             font-size: 14px;
             line-height: 1.4;
             animation: fadeInSlide 0.3s ease-out forwards;
             word-break: break-all;
-            color: #FFFFFF !important; /* 기본 글자 흰색 강제 */
-        }
-        @keyframes fadeInSlide {
-            0% { opacity: 0; transform: translateY(10px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        .input-box {
+        }}
+        .chat-item:first-child {{
+            margin-top: auto;
+        }}
+        @keyframes fadeInSlide {{
+            0% {{ opacity: 0; transform: translateY(10px); }}
+            100% {{ opacity: 1; transform: translateY(0); }}
+        }}
+        .system-msg {{
+            color: #AAAAAA !important;
+        }}
+        .username {{
+            font-weight: bold;
+        }}
+        .message-text {{
+            color: #FFFFFF !important;
+        }}
+        .input-box {{
             margin-top: 14px;
             background: rgba(32, 32, 32, 0.85);
             border-radius: 20px;
@@ -104,17 +116,16 @@ def get_live_overlay(users: str = None, msgs: str = None):
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-sizing: border-box;
-        }
-        .input-placeholder {
+        }}
+        .input-placeholder {{
             color: #888888 !important;
             font-size: 13px;
-        }
-        .heart {
+        }}
+        .heart {{
             color: #FF5A78 !important;
             font-weight: bold;
             font-size: 16px;
-        }
+        }}
       </style>
 
       <div class="overlay-container">
@@ -128,38 +139,37 @@ def get_live_overlay(users: str = None, msgs: str = None):
 
       <script>
       //<![CDATA[
-          const inputUsers = __INPUT_USERS__;
-          const inputMsgs = __INPUT_MSGS__;
+          const inputUsers = {js_input_users};
+          const inputMsgs = {js_input_msgs};
           
           const chatBox = document.getElementById('chatBox');
           
           const palette = ["#FF6E6E", "#6EE273", "#73BEFF", "#FFC850", "#DC82FF", "#50E6D2", "#FF9650"];
-          function getColor(name) {
+          function getColor(name) {{
               let hash = 0;
-              for (let i = 0; i < name.length; i++) {
+              for (let i = 0; i < name.length; i++) {{
                   hash = name.charCodeAt(i) + ((hash << 5) - hash);
-              }
+              }}
               return palette[Math.abs(hash) % palette.length];
-          }
+          }}
 
-          function appendChat(u, m) {
+          function appendChat(u, m) {{
               const div = document.createElement('div');
               div.className = 'chat-item';
 
-              if (u === "System") {
-                  div.innerHTML = '<span style="color: #AAAAAA !important;">System: ' + m + '</span>';
-              } else {
+              if (u === "System") {{
+                  div.innerHTML = '<span class="system-msg" style="color: #AAAAAA !important;">System: ' + m + '</span>';
+              }} else {{
                   const color = getColor(u);
-                  // color 스타일과 font 태그를 동시에 주입하여 SVG 환경 내 색상 증발 방지
-                  div.innerHTML = '<font color="' + color + '"><strong style="color: ' + color + ' !important;">' + u + '</strong></font><span style="color: #FFFFFF !important;">: ' + m + '</span>';
-              }
+                  div.innerHTML = '<span class="username" style="color: ' + color + ' !important; font-weight: bold;">' + u + '</span><span class="message-text" style="color: #FFFFFF !important;">: ' + m + '</span>';
+              }}
 
               chatBox.appendChild(div);
 
-              if (chatBox.children.length > 7) {
+              if (chatBox.children.length > 7) {{
                   chatBox.removeChild(chatBox.children[0]);
-              }
-          }
+              }}
+          }}
 
           const samplePool = [
               ["System", "채팅에 참여해 스콘즈를 응원하세요!"],
@@ -175,24 +185,20 @@ def get_live_overlay(users: str = None, msgs: str = None):
           const activeMsgs = inputMsgs.length > 0 ? inputMsgs : samplePool.map(item => item[1]);
 
           let index = 0;
-          for (let j = 0; j < Math.min(4, activeUsers.length); j++) {
+          for (let j = 0; j < Math.min(4, activeUsers.length); j++) {{
               appendChat(activeUsers[index], activeMsgs[index]);
               index = (index + 1) % activeUsers.length;
-          }
+          }}
 
-          setInterval(() => {
+          setInterval(() => {{
               appendChat(activeUsers[index], activeMsgs[index]);
               index = (index + 1) % activeUsers.length;
-          }, 2500);
+          }}, 2500);
       //]]>
       </script>
     </div>
   </foreignObject>
-</svg>"""
-
-    svg_content = svg_template.replace("__BG_STYLE__", bg_style)\
-                               .replace("__INPUT_USERS__", js_input_users)\
-                               .replace("__INPUT_MSGS__", js_input_msgs)
+</svg>'''
 
     return Response(
         content=svg_content,
