@@ -24,11 +24,10 @@ def get_live_overlay(users: str = None, msgs: str = None):
         except:
             pass
 
-    # 파이썬 f-string 안에서 자바스크립트 배열이 정상 인식되도록 json 직렬화
     js_input_users = json.dumps(user_list)
     js_input_msgs = json.dumps(msg_list)
 
-    # 원본 HTML/CSS/JS 코드를 단 한 줄도 버리지 않고 100% 보존한 SVG 코드
+    # 영상에서 알록달록 색상이 완벽하게 작동했던 바로 그 원본 코드
     svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
   <foreignObject width="100%" height="100%">
     <div xmlns="http://www.w3.org/1999/xhtml">
@@ -91,9 +90,6 @@ def get_live_overlay(users: str = None, msgs: str = None):
             line-height: 1.4;
             animation: fadeInSlide 0.3s ease-out forwards;
             word-break: break-all;
-        }}
-        .chat-item:first-child {{
-            margin-top: auto;
         }}
         @keyframes fadeInSlide {{
             0% {{ opacity: 0; transform: translateY(10px); }}
