@@ -22,7 +22,7 @@ def get_color_for_name(name):
 def generate_svg_chat(users: str = None, msgs: str = None):
     # 파라미터가 없을 때 출력될 기본 스콘즈 응원 세팅 (다른 세계관 이름 배제)
     if not users or not msgs:
-        user_list = ["System", "금수단", "아뜨", "루모리", "레인이", "무찌", "지푸리", "몽땅이]
+        user_list = ["System", "금수단", "아뜨", "루모리", "레인이", "무찌", "지푸리", "몽땅이"]
         msg_list = [
             "채팅에 참여해 스콘즈를 응원하세요!",
             "스콘즈 오늘 무대 기대할게요!",
