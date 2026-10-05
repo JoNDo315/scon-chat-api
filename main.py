@@ -40,7 +40,6 @@ def get_live_overlay(users: str = None, msgs: str = None):
             align-items: flex-start;
             height: 100vh;
         }}
-        /* 원본 모범답안 규격인 800x350에 맞춘 컨테이너 크기 조정 */
         .overlay-container {{
             width: 800px;
             height: 350px;
@@ -52,7 +51,6 @@ def get_live_overlay(users: str = None, msgs: str = None):
             position: relative;
             overflow: hidden;
         }}
-        /* 배경 이미지 위에 어두운 오버레이를 얹어 채팅 가독성 확보 */
         .overlay-container::before {{
             content: "";
             position: absolute;
@@ -175,7 +173,6 @@ def get_live_overlay(users: str = None, msgs: str = None):
             ["체리", "오늘 라이브 레전드 찍네ㅋㅋㅋ"]
         ];
 
-        // 파라미터가 있으면 파라미터 데이터를 사용하고, 없으면 기본 샘플 풀 사용
         const activeUsers = inputUsers.length > 0 ? inputUsers : samplePool.map(item => item[0]);
         const activeMsgs = inputMsgs.length > 0 ? inputMsgs : samplePool.map(item => item[1]);
 
@@ -192,4 +189,13 @@ def get_live_overlay(users: str = None, msgs: str = None):
     </script>
 </body>
 </html>"""
-    return Response(content=html_content, media_type="text/html")
+
+    # 핵심: HTML 코드를 완벽한 SVG 이미지 포맷으로 감싸서 플랫폼이 이미지로 인식하게 강제
+    encoded_html = base64.b64encode(html_content.encode('utf-8')).decode('utf-8')
+    svg_wrapper = f'''<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
+    <foreignObject width="100%" height="100%">
+        <iframe xmlns="http://www.w3.org/199/xhtml" src="data:text/html;base64,{encoded_html}" width="800" height="350" style="border:none; overflow:hidden;"></iframe>
+    </foreignObject>
+</svg>'''
+
+    return Response(content=svg_wrapper, media_type="image/svg+xml")
