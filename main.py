@@ -35,7 +35,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
         chat_list = sample_pool
 
     total_items = len(chat_list)
-    # 끊김 없는 완전 무한 루프를 위해 3세트 연속 배치
+    # 완벽한 3배수 순환 루프
     looped_chats = chat_list + chat_list + chat_list
 
     # 1. 배경 이미지
@@ -48,9 +48,9 @@ def get_live_overlay(users: str = None, msgs: str = None):
         except Exception:
             pass
 
-    # 2. 모범 사례 규격 (화면 안에 딱 6~7개가 촘촘히 꽉 차도록 세팅)
-    LINE_HEIGHT = 24  # 줄 간격 축소로 밀도감 형성
-    START_Y = 120     # 첫 로딩부터 화면 가득 6~7줄이 균형 있게 보이도록 배치
+    # 2. 배치 규격
+    LINE_HEIGHT = 24
+    START_Y = 118
     
     text_elements = []
     for i, (u, m) in enumerate(looped_chats):
@@ -70,31 +70,33 @@ def get_live_overlay(users: str = None, msgs: str = None):
 
     items_svg = "\n    ".join(text_elements)
 
-    # 3. 멈춤(Hold)과 순간 도약(Snap)이 조화된 무한 계단 키프레임 생성
-    step_duration = 2.0  # 한 메시지당 주기 (약 1.75초 정지 + 0.25초 찰나의 이동)
+    # 3. 덜컹거림 완벽 차단 키프레임 생성
+    # 각 메시지당 2초 주기 (1.75초 정지, 0.25초 부드러운 전진 이동만 수행)
+    step_duration = 2.0
     total_duration = total_items * step_duration
     
     keyframes_list = []
-    for step in range(total_items + 1):
-        current_y = -(step * LINE_HEIGHT)
-        
-        # 이전 줄에서 방금 올라온 시점 (0.25초 동안 탄력 있게 올라옴)
-        if step > 0:
-            jump_end = ((step - 1 + 0.12) / total_items) * 100
-            keyframes_list.append(f"{jump_end:.2f}% {{ transform: translateY({current_y}px); }}")
-            
-        # 다음 줄로 올라가기 전까지 가만히 머물며 읽히는 시점
-        if step < total_items:
-            hold_end = ((step + 0.88) / total_items) * 100
-            keyframes_list.append(f"{hold_end:.2f}% {{ transform: translateY({current_y}px); }}")
-            
+    for step in range(total_items):
+        start_pct = (step / total_items) * 100
+        hold_pct = ((step + 0.85) / total_items) * 100
+        move_pct = ((step + 1.0) / total_items) * 100
+
+        cur_y = -(step * LINE_HEIGHT)
+        next_y = -((step + 1) * LINE_HEIGHT)
+
+        # 현재 위치 유지 구간 (정지)
+        keyframes_list.append(f"{start_pct:.2f}% {{ transform: translateY({cur_y}px); }}")
+        keyframes_list.append(f"{hold_pct:.2f}% {{ transform: translateY({cur_y}px); }}")
+        # 다음 위치로만 올라가는 단방향 전진
+        keyframes_list.append(f"{move_pct:.2f}% {{ transform: translateY({next_y}px); }}")
+
     keyframes_css = "\n        ".join(keyframes_list)
 
     svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
   <defs>
-    <!-- 상하단 클리핑 마스크 -->
+    <!-- 입력창(y=290)과 LIVE 배지(y=18~40)를 절대 침범하지 않도록 완벽 차단 -->
     <clipPath id="chat-view-area">
-      <rect x="0" y="52" width="800" height="230" />
+      <rect x="0" y="56" width="800" height="226" />
     </clipPath>
     <style>
       .chat-text {{
@@ -102,12 +104,11 @@ def get_live_overlay(users: str = None, msgs: str = None):
         font-size: 13.5px;
       }}
       @keyframes liveStepScroll {{
-        0% {{ transform: translateY(0px); }}
         {keyframes_css}
-        100% {{ transform: translateY(-{total_items * LINE_HEIGHT}px); }}
       }}
       #chatScrollGroup {{
-        animation: liveStepScroll {total_duration}s cubic-bezier(0.2, 0.9, 0.3, 1) infinite;
+        /* linear로 주어야 키프레임 사이에서 위아래로 덜컹거리는 오버슈트가 완전히 사라집니다 */
+        animation: liveStepScroll {total_duration}s linear infinite;
       }}
     </style>
   </defs>
@@ -116,7 +117,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
   {bg_tag}
   <rect width="800" height="350" fill="#000000" opacity="0.45"/>
 
-  <!-- 2. 스크롤 채팅 영역 (화면에 6~7개가 차 있으며 위로 툭툭 올라감) -->
+  <!-- 2. 스크롤 채팅 영역 -->
   <g clip-path="url(#chat-view-area)">
     <g id="chatScrollGroup" transform="translate(38, 0)">
     {items_svg}
