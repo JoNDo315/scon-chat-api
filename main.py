@@ -7,15 +7,15 @@ app = FastAPI()
 
 @app.get("/")
 def get_live_overlay(users: str = None, msgs: str = None):
-    # 시스템 보충용 및 기본 풀
+    # 모범 사례처럼 기본 안내 및 빈자리 보충용 시스템 풀
     system_fillers = [
         ("System", "채팅에 참여해 스콘즈를 응원하세요!"),
-        ("스콘팬1", "오늘 의상 진짜 미쳤다ㅠㅠㅠ"),
-        ("김스콘", "실시간으로 보고 있는데 너무 떨려"),
-        ("토끼단", "스콘즈 화이팅!! 언제나 응원해"),
-        ("모찌", "노래 선곡 미쳤다 진짜"),
-        ("별빛스콘", "댓글 읽어주세요 제발요ㅠㅠ"),
-        ("체리", "오늘 라이브 레전드 찍네ㅋㅋㅋ")
+        ("System", "깨끗한 채팅 문화를 만들어주세요."),
+        ("System", "채팅에 참여해 스콘즈를 응원하세요!"),
+        ("System", "라이브 방송 시청 중입니다."),
+        ("System", "채팅에 참여해 스콘즈를 응원하세요!"),
+        ("System", "응원 메시지를 남겨보세요!"),
+        ("System", "채팅에 참여해 스콘즈를 응원하세요!")
     ]
 
     palette = ["#FF6E6E", "#6EE273", "#73BEFF", "#FFC850", "#DC82FF", "#50E6D2", "#FF9650"]
@@ -25,7 +25,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
             h = ord(ch) + ((h << 5) - h)
         return palette[abs(h) % len(palette)]
 
-    # 1. 전달받은 파라미터 파싱
+    # 1. 파라미터 파싱
     user_inputs = []
     if users and msgs:
         u_arr = [urllib.parse.unquote(u).strip() for u in users.split(",") if u.strip()]
@@ -33,11 +33,10 @@ def get_live_overlay(users: str = None, msgs: str = None):
         for u, m in zip(u_arr, m_arr):
             user_inputs.append((u, m))
 
-    # 2. 최소 7개 유지 로직 (6개 노출 화면에서 중복 노출 차단)
+    # 2. AI가 1~3개만 보내도 서버가 알아서 시스템 멘트로 7개까지 보충
     chat_list = []
     if user_inputs:
         chat_list = list(user_inputs)
-        # 7개 미만일 경우 시스템 응원 채팅 및 필러로 7개까지 채움
         fill_idx = 0
         while len(chat_list) < 7:
             chat_list.append(system_fillers[fill_idx % len(system_fillers)])
@@ -46,7 +45,6 @@ def get_live_overlay(users: str = None, msgs: str = None):
         chat_list = system_fillers
 
     total_items = len(chat_list)
-    # 끊김 없는 완벽한 3배수 순환 루프
     looped_chats = chat_list + chat_list + chat_list
 
     # 3. 배경 이미지 (400x250)
@@ -59,7 +57,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
         except Exception:
             pass
 
-    # 4. 6줄 최적화 규격 (LINE_HEIGHT = 25px)
+    # 4. 규격 및 텍스트 렌더링
     LINE_HEIGHT = 25
     START_Y = 66
     
@@ -68,7 +66,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
         y_pos = START_Y + (i * LINE_HEIGHT)
         if u == "System":
             text_elements.append(
-                f'<text x="0" y="{y_pos}" class="chat-text" fill="#AAAAAA">System: {m}</text>'
+                f'<text x="0" y="{y_pos}" class="chat-text" fill="#8E8E93">System: {m}</text>'
             )
         else:
             col = get_color(u)
@@ -81,7 +79,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
 
     items_svg = "\n    ".join(text_elements)
 
-    # 5. 흔들림 없는 단방향 스텝 키프레임 생성
+    # 5. 흔들림 없는 단방향 스텝 키프레임 (2초 주기)
     step_duration = 2.0
     total_duration = total_items * step_duration
     
@@ -102,7 +100,6 @@ def get_live_overlay(users: str = None, msgs: str = None):
 
     svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250">
   <defs>
-    <!-- 좌측 0 시작으로 닉네임 첫 글자 보존, 150px 높이 내에서 6줄 표시 -->
     <clipPath id="chat-view-area">
       <rect x="0" y="42" width="400" height="158" />
     </clipPath>
