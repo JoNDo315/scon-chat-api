@@ -27,11 +27,12 @@ def get_live_overlay(users: str = None, msgs: str = None):
     js_input_users = json.dumps(user_list)
     js_input_msgs = json.dumps(msg_list)
 
-    svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
+    # f-string 충돌을 원천 차단한 안전한 템플릿 구조
+    svg_template = """<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
   <foreignObject width="100%" height="100%">
     <div xmlns="http://www.w3.org/1999/xhtml">
       <style>
-        body, html {{
+        body, html {
             margin: 0;
             padding: 0;
             width: 800px;
@@ -42,30 +43,30 @@ def get_live_overlay(users: str = None, msgs: str = None):
             display: flex;
             justify-content: flex-start;
             align-items: flex-start;
-        }}
-        .overlay-container {{
+        }
+        .overlay-container {
             width: 800px;
             height: 350px;
-            {bg_style}
+            __BG_STYLE__
             box-sizing: border-box;
             padding: 20px;
             display: flex;
             flex-direction: column;
             position: relative;
             overflow: hidden;
-        }}
-        .overlay-container::before {{
+        }
+        .overlay-container::before {
             content: "";
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0, 0, 0, 0.55);
             z-index: 1;
-        }}
-        .live-badge, .chat-scroll-box, .input-box {{
+        }
+        .live-badge, .chat-scroll-box, .input-box {
             position: relative;
             z-index: 2;
-        }}
-        .live-badge {{
+        }
+        .live-badge {
             display: inline-block;
             background-color: #FF2D55;
             color: #FFFFFF !important;
@@ -75,36 +76,35 @@ def get_live_overlay(users: str = None, msgs: str = None):
             border-radius: 4px;
             margin-bottom: 12px;
             width: fit-content;
-        }}
-        .chat-scroll-box {{
+        }
+        .chat-scroll-box {
             height: 200px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: flex-end; /* 채팅이 항상 바닥(하단)부터 시작하도록 고정 */
-            align-items: flex-start;
+            justify-content: flex-end;
             gap: 8px;
-        }}
-        .chat-item {{
+        }
+        .chat-item {
             font-size: 14px;
             line-height: 1.4;
             animation: fadeInSlide 0.3s ease-out forwards;
             word-break: break-all;
-        }}
-        @keyframes fadeInSlide {{
-            0% {{ opacity: 0; transform: translateY(10px); }}
-            100% {{ opacity: 1; transform: translateY(0); }}
-        }}
-        .system-msg {{
+        }
+        @keyframes fadeInSlide {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .system-msg {
             color: #AAAAAA !important;
-        }}
-        .username {{
+        }
+        .username {
             font-weight: bold;
-        }}
-        .message-text {{
+        }
+        .message-text {
             color: #FFFFFF !important;
-        }}
-        .input-box {{
+        }
+        .input-box {
             margin-top: 14px;
             background: rgba(32, 32, 32, 0.85);
             border-radius: 20px;
@@ -113,16 +113,16 @@ def get_live_overlay(users: str = None, msgs: str = None):
             align-items: center;
             justify-content: space-between;
             box-sizing: border-box;
-        }}
-        .input-placeholder {{
+        }
+        .input-placeholder {
             color: #888888 !important;
             font-size: 13px;
-        }}
-        .heart {{
+        }
+        .heart {
             color: #FF5A78 !important;
             font-weight: bold;
             font-size: 16px;
-        }}
+        }
       </style>
 
       <div class="overlay-container">
@@ -136,38 +136,37 @@ def get_live_overlay(users: str = None, msgs: str = None):
 
       <script>
       //<![CDATA[
-          const inputUsers = {js_input_users};
-          const inputMsgs = {js_input_msgs};
+          const inputUsers = __INPUT_USERS__;
+          const inputMsgs = __INPUT_MSGS__;
           
           const chatBox = document.getElementById('chatBox');
           
           const palette = ["#FF6E6E", "#6EE273", "#73BEFF", "#FFC850", "#DC82FF", "#50E6D2", "#FF9650"];
-          function getColor(name) {{
+          function getColor(name) {
               let hash = 0;
-              for (let i = 0; i < name.length; i++) {{
+              for (let i = 0; i < name.length; i++) {
                   hash = name.charCodeAt(i) + ((hash << 5) - hash);
-              }}
+              }
               return palette[Math.abs(hash) % palette.length];
-          }}
+          }
 
-          function appendChat(u, m) {{
+          function appendChat(u, m) {
               const div = document.createElement('div');
               div.className = 'chat-item';
 
-              if (u === "System") {{
+              if (u === "System") {
                   div.innerHTML = '<span class="system-msg" style="color: #AAAAAA !important;">System: ' + m + '</span>';
-              }} else {{
+              } else {
                   const color = getColor(u);
                   div.innerHTML = '<span class="username" style="color: ' + color + ' !important; font-weight: bold;">' + u + '</span><span class="message-text" style="color: #FFFFFF !important;">: ' + m + '</span>';
-              }}
+              }
 
               chatBox.appendChild(div);
 
-              // 최대 노출 줄 수 초과 시 맨 위 오래된 대화 삭제
-              if (chatBox.children.length > 7) {{
+              if (chatBox.children.length > 7) {
                   chatBox.removeChild(chatBox.children[0]);
-              }}
-          }}
+              }
+          }
 
           const samplePool = [
               ["System", "채팅에 참여해 스콘즈를 응원하세요!"],
@@ -183,20 +182,25 @@ def get_live_overlay(users: str = None, msgs: str = None):
           const activeMsgs = inputMsgs.length > 0 ? inputMsgs : samplePool.map(item => item[1]);
 
           let index = 0;
-          for (let j = 0; j < Math.min(4, activeUsers.length); j++) {{
+          for (let j = 0; j < Math.min(4, activeUsers.length); j++) {
               appendChat(activeUsers[index], activeMsgs[index]);
               index = (index + 1) % activeUsers.length;
-          }}
+          }
 
-          setInterval(() => {{
+          setInterval(() => {
               appendChat(activeUsers[index], activeMsgs[index]);
               index = (index + 1) % activeUsers.length;
-          }}, 2500);
+          }, 2500);
       //]]>
       </script>
     </div>
   </foreignObject>
-</svg>'''
+</svg>"""
+
+    # 파이썬 f-string 간섭 없이 깔끔하게 대치
+    svg_content = svg_template.replace("__BG_STYLE__", bg_style)\
+                               .replace("__INPUT_USERS__", js_input_users)\
+                               .replace("__INPUT_MSGS__", js_input_msgs)
 
     return Response(
         content=svg_content,
