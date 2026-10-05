@@ -35,10 +35,9 @@ def get_live_overlay(users: str = None, msgs: str = None):
         chat_list = sample_pool
 
     total_items = len(chat_list)
-    # 끊김 없는 완벽한 3배수 순환 루프
     looped_chats = chat_list + chat_list + chat_list
 
-    # 1. 배경 이미지 (원본 규격 400x250)
+    # 1. 배경 이미지 (400x250)
     bg_tag = '<rect width="400" height="250" fill="#141414"/>'
     if os.path.exists("bg.png"):
         try:
@@ -48,9 +47,9 @@ def get_live_overlay(users: str = None, msgs: str = None):
         except Exception:
             pass
 
-    # 2. 원본 실측 규격 적용 (높이 150px 영역 안에 정확히 6개 노출)
+    # 2. 6줄 최적화 규격 (LINE_HEIGHT = 25px)
     LINE_HEIGHT = 25
-    START_Y = 64  # 첫 줄 텍스트 베이스라인
+    START_Y = 66  # 마스크 내부(42px~)에서 글자가 안전하게 보이도록 베이스라인 조정
     
     text_elements = []
     for i, (u, m) in enumerate(looped_chats):
@@ -70,7 +69,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
 
     items_svg = "\n    ".join(text_elements)
 
-    # 3. 흔들림 없는 원본 스텝 키프레임 생성 (2초 주기: 1.7초 정지 + 0.3초 이동)
+    # 3. 쫀득한 단방향 스텝 키프레임
     step_duration = 2.0
     total_duration = total_items * step_duration
     
@@ -91,9 +90,9 @@ def get_live_overlay(users: str = None, msgs: str = None):
 
     svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250">
   <defs>
-    <!-- 원본 실측 마스크: x="15" y="45" width="370" height="150" -->
+    <!-- 좌측 마스크는 0부터 시작해 텍스트 앞글자가 절대 잘리지 않도록 보호 -->
     <clipPath id="chat-view-area">
-      <rect x="15" y="45" width="370" height="150" />
+      <rect x="0" y="42" width="400" height="158" />
     </clipPath>
     <style>
       .chat-text {{
@@ -113,20 +112,20 @@ def get_live_overlay(users: str = None, msgs: str = None):
   {bg_tag}
   <rect width="400" height="250" fill="#000000" opacity="0.45"/>
 
-  <!-- 2. 스크롤 채팅 영역 (정확히 6줄 노출 및 스텝 롤링) -->
+  <!-- 2. 스크롤 채팅 영역 (좌측 22px 안착으로 앞글자 잘림 원천 차단) -->
   <g clip-path="url(#chat-view-area)">
-    <g id="chatScrollGroup" transform="translate(18, 0)">
+    <g id="chatScrollGroup" transform="translate(22, 0)">
     {items_svg}
     </g>
   </g>
 
-  <!-- 3. 상단 LIVE 배지 (원본 좌표: 15, 14) -->
+  <!-- 3. 상단 LIVE 배지 -->
   <g transform="translate(15, 14)">
     <rect width="42" height="20" rx="3" fill="#FF2D55"/>
     <text x="8" y="14" fill="#FFFFFF" font-family="'Malgun Gothic', sans-serif" font-weight="bold" font-size="10px">LIVE</text>
   </g>
 
-  <!-- 4. 하단 입력창 UI (원본 좌표: 15, 204) -->
+  <!-- 4. 하단 입력창 UI -->
   <g transform="translate(15, 204)">
     <rect width="370" height="34" rx="17" fill="#202020" opacity="0.85"/>
     <text x="16" y="21" fill="#888888" font-family="'Malgun Gothic', sans-serif" font-size="11.5px">채팅에 참여하세요...</text>
