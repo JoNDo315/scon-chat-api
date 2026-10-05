@@ -8,91 +8,194 @@ app = FastAPI()
 @app.get("/")
 def get_live_overlay(users: str = None, msgs: str = None):
     if not users or not msgs:
-        user_list = ["System", "스콘팬1", "김스콘", "토끼단"]
-        msg_list = [
-            "채팅에 참여해 스콘즈를 응원하세요!",
-            "오늘 의상 진짜 미쳤다ㅠㅠㅠ",
-            "실시간으로 보고 있는데 너무 떨려",
-            "스콘즈 화이팅!! 언제나 응원해"
-        ]
+        user_list = []
+        msg_list = []
     else:
         user_list = [urllib.parse.unquote(u).strip() for u in users.split(",") if u.strip()]
         msg_list = [urllib.parse.unquote(m).strip() for m in msgs.split(",") if m.strip()]
 
-    # 배경 이미지(bg.png) 처리
-    bg_svg_tag = '<rect width="800" height="350" fill="#141414"/>'
+    bg_style = "background-color: #141414;"
     if os.path.exists("bg.png"):
         try:
             with open("bg.png", "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
-                bg_svg_tag = f'<image x="0" y="0" width="800" height="350" href="data:image/png;base64,{encoded_string}" preserveAspectRatio="none"/>'
+                bg_style = f"background-image: url('data:image/png;base64,{encoded_string}'); background-size: cover; background-position: center; background-repeat: no-repeat;"
         except:
             pass
 
-    # 순수 SVG 구조 (외부 제약 없이 플랫폼과 브라우저에서 100% 렌더링 보장)
-    svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
-  <defs>
-    <clipPath id="chat-view-area">
-      <rect x="20" y="55" width="760" height="210" />
-    </clipPath>
+    html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Scon Live Chat</title>
     <style>
-      @keyframes fadeSlide {{
-        0% {{ opacity: 0; transform: translateY(12px); }}
-        100% {{ opacity: 1; transform: translateY(0); }}
-      }}
-      .chat-line {{
-        animation: fadeSlide 0.3s ease-out forwards;
-      }}
+        body {{
+            margin: 0;
+            padding: 0;
+            background-color: #0d0d0d;
+            font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            height: 100vh;
+        }}
+        .overlay-container {{
+            width: 800px;
+            height: 350px;
+            {bg_style}
+            box-sizing: border-box;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }}
+        .overlay-container::before {{
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 1;
+        }}
+        .live-badge, .chat-scroll-box, .input-box {{
+            position: relative;
+            z-index: 2;
+        }}
+        .live-badge {{
+            display: inline-block;
+            background-color: #FF2D55;
+            color: white;
+            font-weight: bold;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            margin-bottom: 12px;
+            width: fit-content;
+        }}
+        .chat-scroll-box {{
+            height: 200px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            gap: 8px;
+        }}
+        .chat-item {{
+            font-size: 14px;
+            line-height: 1.4;
+            animation: fadeInSlide 0.3s ease-out forwards;
+            word-break: break-all;
+        }}
+        @keyframes fadeInSlide {{
+            0% {{ opacity: 0; transform: translateY(10px); }}
+            100% {{ opacity: 1; transform: translateY(0); }}
+        }}
+        .system-msg {{
+            color: #AAAAAA;
+        }}
+        .username {{
+            font-weight: bold;
+        }}
+        .message-text {{
+            color: #FFFFFF;
+        }}
+        .input-box {{
+            margin-top: 14px;
+            background: rgba(32, 32, 32, 0.85);
+            border-radius: 20px;
+            padding: 10px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }}
+        .input-placeholder {{
+            color: #888888;
+            font-size: 13px;
+        }}
+        .heart {{
+            color: #FF5A78;
+            font-weight: bold;
+            font-size: 16px;
+        }}
     </style>
-  </defs>
+</head>
+<body>
+    <div class="overlay-container">
+        <div class="live-badge">LIVE</div>
+        <div class="chat-scroll-box" id="chatBox"></div>
+        <div class="input-box">
+            <span class="input-placeholder">채팅에 참여하세요...</span>
+            <span class="heart">♥</span>
+        </div>
+    </div>
 
-  <!-- 1. 배경 이미지 -->
-  {bg_svg_tag}
-  
-  <!-- 배경 어둡게 오버레이 -->
-  <rect width="800" height="350" fill="#000000" rx="12" opacity="0.6"/>
+    <script>
+        const inputUsers = {str(user_list).replace("'", '"')};
+        const inputMsgs = {str(msg_list).replace("'", '"')};
+        
+        const chatBox = document.getElementById('chatBox');
+        
+        const palette = ["#FF6E6E", "#6EE273", "#73BEFF", "#FFC850", "#DC82FF", "#50E6D2", "#FF9650"];
+        function getColor(name) {{
+            let hash = 0;
+            for (let i = 0; i < name.length; i++) {{
+                hash = name.charCodeAt(i) + ((hash << 5) - hash);
+            }}
+            return palette[Math.abs(hash) % palette.length];
+        }}
 
-  <!-- 2. 상단 LIVE 배지 -->
-  <g transform="translate(20, 18)">
-    <rect width="46" height="22" rx="4" fill="#FF2D55"/>
-    <text x="9" y="15" fill="#FFFFFF" font-family="'Malgun Gothic', sans-serif" font-weight="bold" font-size="11px">LIVE</text>
-    <circle cx="70" cy="11" r="4" fill="#FFFFFF"/>
-    <text x="82" y="15" fill="#FFFFFF" font-family="'Malgun Gothic', sans-serif" font-weight="bold" font-size="12px">1.2M</text>
-  </g>
+        function appendChat(u, m) {{
+            const div = document.createElement('div');
+            div.className = 'chat-item';
 
-  <!-- 3. 스크롤 채팅 영역 -->
-  <g clip-path="url(#chat-view-area)">
-    <g transform="translate(25, 0)">
-'''
+            if (u === "System") {{
+                div.innerHTML = '<span class="system-msg">System: ' + m + '</span>';
+            }} else {{
+                const color = getColor(u);
+                div.innerHTML = '<span class="username" style="color: ' + color + ';">' + u + '</span><span class="message-text">: ' + m + '</span>';
+            }}
 
-    palette = ["#FF6E6E", "#6EE273", "#73BEFF", NumericColor if False else "#FFC850", "#DC82FF", "#50E6D2", "#FF9650"]
-    
-    # 전달받은 데이터 렌더링
-    display_users = user_list[-6:]
-    display_msgs = msg_list[-6:]
-    start_y = 90
-    
-    for i, (u, m) in enumerate(zip(display_users, display_msgs)):
-        y_pos = start_y + (i * 32)
-        if u == "System":
-            svg_content += f'      <text x="0" y="{y_pos}" fill="#AAAAAA" font-family="\'Malgun Gothic\', sans-serif" font-size="14px" class="chat-line">System: {m}</text>\n'
-        else:
-            color_idx = sum(ord(c) for c in u) % len(palette)
-            color = palette[color_idx]
-            svg_content += f'''      <text x="0" y="{y_pos}" font-family="'Malgun Gothic', sans-serif" font-size="14px" class="chat-line">
-        <tspan fill="{color}" font-weight="bold">{u}</tspan>
-        <tspan fill="#FFFFFF">: {m}</tspan>
-      </text>\n'''
+            chatBox.appendChild(div);
 
-    svg_content += f'''    </g>
-  </g>
+            if (chatBox.children.length > 7) {{
+                chatBox.removeChild(chatBox.children[0]);
+            }}
+        }}
 
-  <!-- 4. 하단 입력창 UI -->
-  <g transform="translate(20, 290)">
-    <rect width="760" height="42" rx="21" fill="#202020" opacity="0.85"/>
-    <text x="22" y="26" fill="#888888" font-family="'Malgun Gothic', sans-serif" font-size="13px">채팅에 참여하세요...</text>
-    <text x="725" y="27" fill="#FF5A78" font-family="'Malgun Gothic', sans-serif" font-weight="bold" font-size="16px">♥</text>
-  </g>
-</svg>'''
+        const samplePool = [
+            ["System", "채팅에 참여해 스콘즈를 응원하세요!"],
+            ["스콘팬1", "오늘 의상 진짜 미쳤다ㅠㅠㅠ"],
+            ["김스콘", "실시간으로 보고 있는데 너무 떨려"],
+            ["토끼단", "스콘즈 화이팅!! 언제나 응원해"],
+            ["모찌", "노래 선곡 미쳤다 진짜"],
+            ["별빛스콘", "댓글 읽어주세요 제발요ㅠㅠ"],
+            ["체리", "오늘 라이브 레전드 찍네ㅋㅋㅋ"]
+        ];
 
-    return Response(content=svg_content, media_type="image/svg+xml")
+        const activeUsers = inputUsers.length > 0 ? inputUsers : samplePool.map(item => item[0]);
+        const activeMsgs = inputMsgs.length > 0 ? inputMsgs : samplePool.map(item => item[1]);
+
+        let index = 0;
+        for (let j = 0; j < Math.min(4, activeUsers.length); j++) {{
+            appendChat(activeUsers[index], activeMsgs[index]);
+            index = (index + 1) % activeUsers.length;
+        }}
+
+        setInterval(() => {{
+            appendChat(activeUsers[index], activeMsgs[index]);
+            index = (index + 1) % activeUsers.length;
+        }}, 2500);
+    </script>
+</body>
+</html>"""
+
+    # 플랫폼이 HTML을 정상적으로 불러오면서 브라우저가 이미지 태그로 렌더링할 수 있도록 지원하는 헤더 설정
+    return Response(
+        content=html_content, 
+        media_type="text/html",
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "no-cache"
+        }
+    )
