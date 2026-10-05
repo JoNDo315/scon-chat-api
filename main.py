@@ -7,7 +7,6 @@ app = FastAPI()
 
 @app.get("/")
 def get_live_overlay(users: str = None, msgs: str = None):
-    # 기본 샘플 풀
     sample_pool = [
         ("System", "채팅에 참여해 스콘즈를 응원하세요!"),
         ("스콘팬1", "오늘 의상 진짜 미쳤다ㅠㅠㅠ"),
@@ -25,7 +24,6 @@ def get_live_overlay(users: str = None, msgs: str = None):
             h = ord(ch) + ((h << 5) - h)
         return palette[abs(h) % len(palette)]
 
-    # 유저 입력 파라미터 파싱
     chat_list = []
     if users and msgs:
         u_arr = [urllib.parse.unquote(u).strip() for u in users.split(",") if u.strip()]
@@ -36,7 +34,6 @@ def get_live_overlay(users: str = None, msgs: str = None):
     if not chat_list:
         chat_list = sample_pool
 
-    # 무한 루프 애니메이션을 위해 2회 연속 배치
     looped_chats = chat_list + chat_list
     total_items = len(chat_list)
 
@@ -50,9 +47,9 @@ def get_live_overlay(users: str = None, msgs: str = None):
         except Exception:
             pass
 
-    # 2. 텍스트 노드 생성 (하단 기준 배치)
+    # 2. 줄 간격 및 텍스트 시작점 (하단 입력창 위 여백 확보)
     LINE_HEIGHT = 28
-    START_Y = 265  # 입력창 바로 위 기준점
+    START_Y = 275  # 입력창 바로 윗선 기준
     
     text_elements = []
     for i, (u, m) in enumerate(looped_chats):
@@ -72,14 +69,14 @@ def get_live_overlay(users: str = None, msgs: str = None):
 
     items_svg = "\n    ".join(text_elements)
     
-    # 스크롤 거리 및 애니메이션 시간 계산
     scroll_distance = total_items * LINE_HEIGHT
     anim_duration = max(8, total_items * 2.2)
 
     svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
   <defs>
+    <!-- 글자가 위아래/좌우로 삐져나가지 않도록 보호하는 마스크 영역 -->
     <clipPath id="chat-view-area">
-      <rect x="20" y="55" width="760" height="225" />
+      <rect x="0" y="48" width="800" height="236" />
     </clipPath>
     <style>
       .chat-text {{
@@ -104,9 +101,9 @@ def get_live_overlay(users: str = None, msgs: str = None):
   {bg_tag}
   <rect width="800" height="350" fill="#000000" opacity="0.45"/>
 
-  <!-- 2. 스크롤 채팅 영역 (CSS 무한 롤링) -->
+  <!-- 2. 스크롤 채팅 영역 (좌측 여백 28px로 이동해 글자 앞 잘림 방지) -->
   <g clip-path="url(#chat-view-area)">
-    <g id="chatScrollGroup" transform="translate(20, 0)">
+    <g id="chatScrollGroup" transform="translate(28, 0)">
     {items_svg}
     </g>
   </g>
