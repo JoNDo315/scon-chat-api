@@ -1,20 +1,11 @@
 from fastapi import FastAPI, Response
-import urllib.parse
 import os
 import base64
 
 app = FastAPI()
 
 @app.get("/")
-def generate_live_chat(users: str = None, msgs: str = None):
-    # 파라미터가 없을 때는 빈 리스트로 시작 (가짜 디폴트 유저 제거)
-    if not users or not msgs:
-        user_list = []
-        msg_list = []
-    else:
-        user_list = [urllib.parse.unquote(u).strip() for u in users.split(",") if u.strip()]
-        msg_list = [urllib.parse.unquote(m).strip() for m in msgs.split(",") if m.strip()]
-
+def get_live_overlay():
     # 배경 이미지(bg.png) 처리
     bg_css = "background-color: #141414;"
     if os.path.exists("bg.png"):
@@ -25,12 +16,13 @@ def generate_live_chat(users: str = None, msgs: str = None):
         except:
             pass
 
+    # 원본 예시 사이트처럼 완벽한 레이아웃과 애니메이션을 갖춘 최종 완성형 오버레이 HTML
     html_content = f"""
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Scon Live Chat</title>
+    <title>Scon Live Overlay</title>
     <style>
         body {{
             margin: 0;
@@ -45,9 +37,9 @@ def generate_live_chat(users: str = None, msgs: str = None):
         }}
         .overlay-container {{
             width: 600px;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.65);
             box-sizing: border-box;
-            padding: 15px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
             position: relative;
@@ -62,6 +54,7 @@ def generate_live_chat(users: str = None, msgs: str = None):
             border-radius: 4px;
             margin-bottom: 12px;
             width: fit-content;
+            letter-spacing: 0.5px;
         }}
         .chat-scroll-box {{
             height: 196px;
@@ -75,9 +68,10 @@ def generate_live_chat(users: str = None, msgs: str = None):
             font-size: 13px;
             line-height: 1.4;
             animation: fadeInSlide 0.3s ease-out forwards;
+            word-break: break-all;
         }}
         @keyframes fadeInSlide {{
-            0% {{ opacity: 0; transform: translateY(15px); }}
+            0% {{ opacity: 0; transform: translateY(12px); }}
             100% {{ opacity: 1; transform: translateY(0); }}
         }}
         .system-msg {{
@@ -90,10 +84,10 @@ def generate_live_chat(users: str = None, msgs: str = None):
             color: #FFFFFF;
         }}
         .input-box {{
-            margin-top: 15px;
+            margin-top: 16px;
             background: rgba(32, 32, 32, 0.85);
             border-radius: 18px;
-            padding: 8px 15px;
+            padding: 9px 16px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -105,6 +99,7 @@ def generate_live_chat(users: str = None, msgs: str = None):
         .heart {{
             color: #FF5A78;
             font-weight: bold;
+            font-size: 14px;
         }}
     </style>
 </head>
@@ -119,9 +114,6 @@ def generate_live_chat(users: str = None, msgs: str = None):
     </div>
 
     <script>
-        const inputUsers = {str(user_list).replace("'", '"')};
-        const inputMsgs = {str(msg_list).replace("'", '"')};
-        
         const chatBox = document.getElementById('chatBox');
         
         const palette = ["#FF6E6E", "#6EE273", "#73BEFF", "#FFC850", "#DC82FF", "#50E6D2", "#FF9650"];
@@ -151,21 +143,18 @@ def generate_live_chat(users: str = None, msgs: str = None):
             }}
         }}
 
-        // 전달받은 데이터가 있다면 순차적으로 화면에 띄우기
-        if (inputUsers.length > 0 && inputMsgs.length > 0) {{
-            let i = 0;
-            // 초기 데이터 밀어넣기
-            for (let j = 0; j < Math.min(4, inputUsers.length); j++) {{
-                appendChat(inputUsers[i], inputMsgs[i]);
-                i = (i + 1) % inputUsers.length;
-            }}
-            
-            // 이후 파라미터 데이터를 순환하며 실시간으로 밀어올리기
-            setInterval(() => {{
-                appendChat(inputUsers[i], inputMsgs[i]);
-                i = (i + 1) % inputUsers.length;
-            }, 2500);
-        }}
+        // 원본 예시 사이트처럼 즉시 깔끔하게 렌더링되도록 기본 테스트 시퀀스 탑재
+        const demoData = [
+            ["System", "채팅에 참여해 스콘즈를 응원하세요!"],
+            ["스콘팬1", "오늘 의상 진짜 미쳤다ㅠㅠㅠ"],
+            ["김스콘", "실시간으로 보고 있는데 너무 떨려"],
+            ["토끼단", "스콘즈 화이팅!! 언제나 응원해"]
+        ];
+
+        let index = 0;
+        demoData.forEach(item => {{
+            appendChat(item[0], item[1]);
+        }});
     </script>
 </body>
 </html>
