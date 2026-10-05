@@ -23,7 +23,7 @@ def generate_svg_chat(users: str, msgs: str):
     user_list = [u.strip() for u in users.split(",") if u.strip()]
     msg_list = [m.strip() for m in msgs.split(",") if m.strip()]
     
-    # 데이터가 부족할 경우 '스콘즈' 응원 문구로 채우기
+    # 데이터가 부족할 경우 스콘즈 응원 문구로 채우기
     while len(user_list) < 5 or len(msg_list) < 5:
         user_list.append("System")
         msg_list.append("채팅에 참여해 스콘즈를 응원하세요!")
@@ -42,13 +42,20 @@ def generate_svg_chat(users: str, msgs: str):
         except:
             pass
             
-    # SVG 문서 조립
+    # SVG 문서 조립 (스크롤 애니메이션 CSS 포함)
     svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
   <style>
     .chat-font {{ font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; font-size: 13px; }}
     .bold {{ font-weight: bold; }}
     .system-text {{ fill: #AAAAAA; }}
     .placeholder {{ fill: #888888; font-size: 11px; }}
+    @keyframes scrollUp {{
+      0% {{ transform: translateY(15px); opacity: 0.8; }}
+      100% {{ transform: translateY(0px); opacity: 1; }}
+    >
+    .scroll-area {{
+      animation: scrollUp 0.5s ease-out forwards;
+    }}
   </style>
 '''
 
@@ -58,27 +65,29 @@ def generate_svg_chat(users: str, msgs: str):
     else:
         svg_content += f'  <rect width="{width}" height="{height}" fill="#141414"/>\n'
 
-    # 상단 LIVE 배지
+    # 상단 LIVE 배지 (고정)
     svg_content += '''  <g transform="translate(15, 15)">
     <rect width="40" height="20" rx="4" fill="#CC0000"/>
     <text x="8" y="14" fill="#FFFFFF" class="chat-font bold" font-size="11">LIVE</text>
   </g>
 '''
 
-    # 실시간 채팅 목록 렌더링
+    # 스크롤 애니메이션이 적용되는 채팅 목록 그룹
+    svg_content += '  <g class="scroll-area">\n'
     y = 65
     for u, m in zip(user_list, msg_list):
         username = urllib.parse.unquote(u).strip()
         message = urllib.parse.unquote(m).strip()
         
         if username == "System":
-            svg_content += f'  <text x="15" y="{y}" class="chat-font system-text">System: {message}</text>\n'
+            svg_content += f'    <text x="15" y="{y}" class="chat-font system-text">System: {message}</text>\n'
         else:
             color = get_color_for_name(username)
-            svg_content += f'  <text x="15" y="{y}" class="chat-font bold" fill="{color}">{username}<tspan fill="#FFFFFF">: {message}</tspan></text>\n'
+            svg_content += f'    <text x="15" y="{y}" class="chat-font bold" fill="{color}">{username}<tspan fill="#FFFFFF">: {message}</tspan></text>\n'
         y += 28
+    svg_content += '  </g>\n'
 
-    # 하단 채팅 입력창
+    # 하단 채팅 입력창 (고정)
     input_y = height - 42
     svg_content += f'''  <g transform="translate(15, {input_y})">
     <rect width="{width - 30}" height="32" rx="16" fill="#202020" opacity="0.85"/>
