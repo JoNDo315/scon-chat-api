@@ -19,20 +19,29 @@ def get_color_for_name(name):
     return COLOR_PALETTE[sum(ord(c) for c in name) % len(COLOR_PALETTE)]
 
 @app.get("/")
-def generate_svg_chat(users: str, msgs: str):
-    user_list = [u.strip() for u in users.split(",") if u.strip()]
-    msg_list = [m.strip() for m in msgs.split(",") if m.strip()]
-    
-    # 데이터가 부족할 경우 스콘즈 응원 문구로 채우기
-    while len(user_list) < 5 or len(msg_list) < 5:
-        user_list.append("System")
-        msg_list.append("채팅에 참여해 스콘즈를 응원하세요!")
+def generate_svg_chat(users: str = None, msgs: str = None):
+    # 파라미터 없이 주소만 딱 쳤을 때 기본으로 출력될 아이돌 라이브 대화 세팅
+    if not users or not msgs:
+        user_list = ["System", "엘리시아", "구미호맘", "치키미", "스콘팬1"]
+        msg_list = [
+            "채팅에 참여해 스콘즈를 응원하세요!",
+            "오늘 라이브 너무 재밌다ㅋㅋㅋ",
+            "다들 의상 미쳤어ㅠㅠㅠ",
+            "치키미 표정 개웃기네",
+            "스콘즈 화이팅!!"
+        ]
+    else:
+        user_list = [u.strip() for u in users.split(",") if u.strip()]
+        msg_list = [m.strip() for m in msgs.split(",") if m.strip()]
+        
+        while len(user_list) < 5 or len(msg_list) < 5:
+            user_list.append("System")
+            msg_list.append("채팅에 참여해 스콘즈를 응원하세요!")
         
     width = 600
     chat_height = len(user_list) * 28
     height = 80 + chat_height + 50
     
-    # 배경 이미지(bg.png)를 base64로 변환하여 SVG에 삽입
     bg_svg_tag = ""
     if os.path.exists("bg.png"):
         try:
@@ -42,7 +51,6 @@ def generate_svg_chat(users: str, msgs: str):
         except:
             pass
             
-    # SVG 문서 조립 (스크롤 애니메이션 CSS 포함)
     svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
   <style>
     .chat-font {{ font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; font-size: 13px; }}
@@ -52,7 +60,7 @@ def generate_svg_chat(users: str, msgs: str):
     @keyframes scrollUp {{
       0% {{ transform: translateY(15px); opacity: 0.8; }}
       100% {{ transform: translateY(0px); opacity: 1; }}
-    >
+    }}
     .scroll-area {{
       animation: scrollUp 0.5s ease-out forwards;
     }}
@@ -65,14 +73,14 @@ def generate_svg_chat(users: str, msgs: str):
     else:
         svg_content += f'  <rect width="{width}" height="{height}" fill="#141414"/>\n'
 
-    # 상단 LIVE 배지 (고정)
+    # 상단 LIVE 배지
     svg_content += '''  <g transform="translate(15, 15)">
     <rect width="40" height="20" rx="4" fill="#CC0000"/>
     <text x="8" y="14" fill="#FFFFFF" class="chat-font bold" font-size="11">LIVE</text>
   </g>
 '''
 
-    # 스크롤 애니메이션이 적용되는 채팅 목록 그룹
+    # 채팅 목록 영역
     svg_content += '  <g class="scroll-area">\n'
     y = 65
     for u, m in zip(user_list, msg_list):
@@ -87,7 +95,7 @@ def generate_svg_chat(users: str, msgs: str):
         y += 28
     svg_content += '  </g>\n'
 
-    # 하단 채팅 입력창 (고정)
+    # 하단 입력창
     input_y = height - 42
     svg_content += f'''  <g transform="translate(15, {input_y})">
     <rect width="{width - 30}" height="32" rx="16" fill="#202020" opacity="0.85"/>
