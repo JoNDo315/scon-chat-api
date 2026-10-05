@@ -20,28 +20,23 @@ def get_color_for_name(name):
 
 @app.get("/")
 def generate_svg_chat(users: str = None, msgs: str = None):
-    # 파라미터가 없을 때의 기본값 (요청 시 유저/메시지가 실시간 반영됨)
+    # 파라미터가 없을 때 출력될 기본 스콘즈 응원 세팅 (다른 세계관 이름 배제)
     if not users or not msgs:
-        user_list = ["System", "엘리시아", "구미호맘", "치키미", "스콘팬1", "모찌", "김스콘"]
+        user_list = ["System", "금수단", "아뜨", "루모리", "레인이", "무찌", "지푸리", "몽땅이]
         msg_list = [
             "채팅에 참여해 스콘즈를 응원하세요!",
-            "오늘 라이브 너무 재밌다ㅋㅋㅋ",
-            "다들 의상 미쳤어ㅠㅠㅠ",
-            "치키미 표정 개웃기네",
-            "스콘즈 화이팅!!",
-            "노래 진짜 좋다",
-            "댓글 읽어주세요ㅠㅠ"
+            "스콘즈 오늘 무대 기대할게요!",
+            "와 실시간으로 보는 중ㅠㅠ",
+            "스콘즈 화이팅!!"
         ]
     else:
         user_list = [u.strip() for u in users.split(",") if u.strip()]
         msg_list = [m.strip() for m in msgs.split(",") if m.strip()]
         
-        # 데이터가 너무 적을 경우 채우기
-        while len(user_list) < 5 or len(msg_list) < 5:
+        while len(user_list) < 4 or len(msg_list) < 4:
             user_list.append("System")
             msg_list.append("채팅에 참여해 스콘즈를 응원하세요!")
             
-    # 원본처럼 최대 7개까지만 유지하며 순환되도록 조절
     max_visible = 7
     if len(user_list) > max_visible:
         user_list = user_list[-max_visible:]
@@ -60,7 +55,6 @@ def generate_svg_chat(users: str = None, msgs: str = None):
         except:
             pass
             
-    # SVG 내부에 부드러운 순환 스크롤 애니메이션 Keyframes 정의
     svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">
   <style>
     .chat-font {{ font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif; font-size: 13px; }}
@@ -83,14 +77,14 @@ def generate_svg_chat(users: str = None, msgs: str = None):
     else:
         svg_content += f'  <rect width="{width}" height="{height}" fill="#141414"/>\n'
 
-    # 상단 LIVE 배지 (고정)
+    # 상단 LIVE 배지
     svg_content += '''  <g transform="translate(15, 15)">
     <rect width="40" height="20" rx="4" fill="#CC0000"/>
     <text x="8" y="14" fill="#FFFFFF" class="chat-font bold" font-size="11">LIVE</text>
   </g>
 '''
 
-    # 채팅 목록 순환 렌더링 영역
+    # 채팅 목록 영역
     svg_content += '  <g class="scroll-area">\n'
     y = 65
     for u, m in zip(user_list, msg_list):
@@ -105,7 +99,7 @@ def generate_svg_chat(users: str = None, msgs: str = None):
         y += 28
     svg_content += '  </g>\n'
 
-    # 하단 채팅 입력창 (고정)
+    # 하단 입력창
     input_y = height - 42
     svg_content += f'''  <g transform="translate(15, {input_y})">
     <rect width="{width - 30}" height="32" rx="16" fill="#202020" opacity="0.85"/>
