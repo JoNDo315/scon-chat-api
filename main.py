@@ -6,17 +6,16 @@ app = FastAPI()
 
 @app.get("/")
 def get_live_overlay():
-    # 배경 이미지(bg.png) 처리 (f-string 외부에서 안전하게 처리)
-    bg_style = "background-color: #141414;"
+    # 배경 이미지(bg.png)를 오직 CSS 배경(background)으로만 안전하게 처리
+    bg_style = "background-color: #0d0d0d;"
     if os.path.exists("bg.png"):
         try:
             with open("bg.png", "rb") as image_file:
                 encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
-                bg_style = "background-image: url('data:image/png;base64," + encoded_string + "'); background-repeat: no-repeat; background-position: center; background-size: contain;"
+                bg_style = f"background-image: url('data:image/png;base64,{encoded_string}'); background-size: cover; background-position: center; background-repeat: no-repeat;"
         except:
             pass
 
-    # f-string을 전혀 쓰지 않는 순수 문자열 (빌드 에러 원천 차단)
     html_content = """<!DOCTYPE html>
 <html>
 <head>
@@ -27,7 +26,6 @@ def get_live_overlay():
             margin: 0;
             padding: 0;
             """ + bg_style + """
-            background-color: #0d0d0d;
             font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', sans-serif;
             overflow: hidden;
             display: flex;
