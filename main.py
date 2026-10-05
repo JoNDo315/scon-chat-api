@@ -27,8 +27,10 @@ def get_live_overlay(users: str = None, msgs: str = None):
     js_input_users = json.dumps(user_list)
     js_input_msgs = json.dumps(msg_list)
 
-    # 영상에서 알록달록 색상이 완벽하게 작동했던 바로 그 원본 코드
     svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
+  <!-- 배경이 날아가 흰색으로 빠지는 것을 막는 절대 암실 레이어 -->
+  <rect width="800" height="350" fill="#0d0d0d" />
+
   <foreignObject width="100%" height="100%">
     <div xmlns="http://www.w3.org/1999/xhtml">
       <style>
