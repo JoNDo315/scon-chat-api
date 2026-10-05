@@ -47,9 +47,9 @@ def get_live_overlay(users: str = None, msgs: str = None):
         except Exception:
             pass
 
-    # 2. 줄 간격 및 텍스트 시작점 (하단 입력창 위 여백 확보)
+    # 2. 줄 간격 및 텍스트 시작점
     LINE_HEIGHT = 28
-    START_Y = 275  # 입력창 바로 윗선 기준
+    START_Y = 275
     
     text_elements = []
     for i, (u, m) in enumerate(looped_chats):
@@ -74,9 +74,9 @@ def get_live_overlay(users: str = None, msgs: str = None):
 
     svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="800" height="350" viewBox="0 0 800 350">
   <defs>
-    <!-- 글자가 위아래/좌우로 삐져나가지 않도록 보호하는 마스크 영역 -->
+    <!-- 상하 마스크 영역 안전마진 확보 -->
     <clipPath id="chat-view-area">
-      <rect x="0" y="48" width="800" height="236" />
+      <rect x="0" y="52" width="800" height="232" />
     </clipPath>
     <style>
       .chat-text {{
@@ -101,9 +101,9 @@ def get_live_overlay(users: str = None, msgs: str = None):
   {bg_tag}
   <rect width="800" height="350" fill="#000000" opacity="0.45"/>
 
-  <!-- 2. 스크롤 채팅 영역 (좌측 여백 28px로 이동해 글자 앞 잘림 방지) -->
+  <!-- 2. 스크롤 채팅 영역 (좌측 38px로 안전하게 이동) -->
   <g clip-path="url(#chat-view-area)">
-    <g id="chatScrollGroup" transform="translate(28, 0)">
+    <g id="chatScrollGroup" transform="translate(38, 0)">
     {items_svg}
     </g>
   </g>
