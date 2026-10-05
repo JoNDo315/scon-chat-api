@@ -7,8 +7,9 @@ app = FastAPI()
 
 @app.get("/")
 def get_live_overlay(users: str = None, msgs: str = None):
-    sample_pool = [
-        ("System", "채팅에 참여해 린이를 응원하세요!"),
+    # 시스템 보충용 및 기본 풀
+    system_fillers = [
+        ("System", "채팅에 참여해 스콘즈를 응원하세요!"),
         ("스콘팬1", "오늘 의상 진짜 미쳤다ㅠㅠㅠ"),
         ("김스콘", "실시간으로 보고 있는데 너무 떨려"),
         ("토끼단", "스콘즈 화이팅!! 언제나 응원해"),
@@ -24,20 +25,31 @@ def get_live_overlay(users: str = None, msgs: str = None):
             h = ord(ch) + ((h << 5) - h)
         return palette[abs(h) % len(palette)]
 
-    chat_list = []
+    # 1. 전달받은 파라미터 파싱
+    user_inputs = []
     if users and msgs:
         u_arr = [urllib.parse.unquote(u).strip() for u in users.split(",") if u.strip()]
         m_arr = [urllib.parse.unquote(m).strip() for m in msgs.split(",") if m.strip()]
         for u, m in zip(u_arr, m_arr):
-            chat_list.append((u, m))
+            user_inputs.append((u, m))
 
-    if not chat_list:
-        chat_list = sample_pool
+    # 2. 최소 7개 유지 로직 (6개 노출 화면에서 중복 노출 차단)
+    chat_list = []
+    if user_inputs:
+        chat_list = list(user_inputs)
+        # 7개 미만일 경우 시스템 응원 채팅 및 필러로 7개까지 채움
+        fill_idx = 0
+        while len(chat_list) < 7:
+            chat_list.append(system_fillers[fill_idx % len(system_fillers)])
+            fill_idx += 1
+    else:
+        chat_list = system_fillers
 
     total_items = len(chat_list)
+    # 끊김 없는 완벽한 3배수 순환 루프
     looped_chats = chat_list + chat_list + chat_list
 
-    # 1. 배경 이미지 (400x250)
+    # 3. 배경 이미지 (400x250)
     bg_tag = '<rect width="400" height="250" fill="#141414"/>'
     if os.path.exists("bg.png"):
         try:
@@ -47,9 +59,9 @@ def get_live_overlay(users: str = None, msgs: str = None):
         except Exception:
             pass
 
-    # 2. 6줄 최적화 규격 (LINE_HEIGHT = 25px)
+    # 4. 6줄 최적화 규격 (LINE_HEIGHT = 25px)
     LINE_HEIGHT = 25
-    START_Y = 66  # 마스크 내부(42px~)에서 글자가 안전하게 보이도록 베이스라인 조정
+    START_Y = 66
     
     text_elements = []
     for i, (u, m) in enumerate(looped_chats):
@@ -69,7 +81,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
 
     items_svg = "\n    ".join(text_elements)
 
-    # 3. 쫀득한 단방향 스텝 키프레임
+    # 5. 흔들림 없는 단방향 스텝 키프레임 생성
     step_duration = 2.0
     total_duration = total_items * step_duration
     
@@ -90,7 +102,7 @@ def get_live_overlay(users: str = None, msgs: str = None):
 
     svg_content = f'''<svg xmlns="http://www.w3.org/2000/svg" width="400" height="250" viewBox="0 0 400 250">
   <defs>
-    <!-- 좌측 마스크는 0부터 시작해 텍스트 앞글자가 절대 잘리지 않도록 보호 -->
+    <!-- 좌측 0 시작으로 닉네임 첫 글자 보존, 150px 높이 내에서 6줄 표시 -->
     <clipPath id="chat-view-area">
       <rect x="0" y="42" width="400" height="158" />
     </clipPath>
@@ -108,24 +120,24 @@ def get_live_overlay(users: str = None, msgs: str = None):
     </style>
   </defs>
 
-  <!-- 1. 배경 -->
+  <!-- 배경 -->
   {bg_tag}
   <rect width="400" height="250" fill="#000000" opacity="0.45"/>
 
-  <!-- 2. 스크롤 채팅 영역 (좌측 22px 안착으로 앞글자 잘림 원천 차단) -->
+  <!-- 스크롤 채팅 그룹 -->
   <g clip-path="url(#chat-view-area)">
     <g id="chatScrollGroup" transform="translate(22, 0)">
     {items_svg}
     </g>
   </g>
 
-  <!-- 3. 상단 LIVE 배지 -->
+  <!-- LIVE 배지 -->
   <g transform="translate(15, 14)">
     <rect width="42" height="20" rx="3" fill="#FF2D55"/>
     <text x="8" y="14" fill="#FFFFFF" font-family="'Malgun Gothic', sans-serif" font-weight="bold" font-size="10px">LIVE</text>
   </g>
 
-  <!-- 4. 하단 입력창 UI -->
+  <!-- 하단 입력창 UI -->
   <g transform="translate(15, 204)">
     <rect width="370" height="34" rx="17" fill="#202020" opacity="0.85"/>
     <text x="16" y="21" fill="#888888" font-family="'Malgun Gothic', sans-serif" font-size="11.5px">채팅에 참여하세요...</text>
