@@ -9,13 +9,13 @@ app = FastAPI()
 def get_live_overlay(users: str = None, msgs: str = None):
     # 모범 사례처럼 기본 안내 및 빈자리 보충용 시스템 풀
     system_fillers = [
-        ("System", "채팅에 참여해 스콘즈를 응원하세요!"),
+        ("System", "채팅에 참여해 아이돌을 응원하세요!"),
         ("System", "깨끗한 채팅 문화를 만들어주세요."),
-        ("System", "채팅에 참여해 스콘즈를 응원하세요!"),
+        ("System", "채팅에 참여해 아이돌을 응원하세요!"),
         ("System", "라이브 방송 시청 중입니다."),
-        ("System", "채팅에 참여해 스콘즈를 응원하세요!"),
+        ("System", "채팅에 참여해 오시를 응원하세요!"),
         ("System", "응원 메시지를 남겨보세요!"),
-        ("System", "채팅에 참여해 스콘즈를 응원하세요!")
+        ("System", "채팅에 참여해 오시를 응원하세요!")
     ]
 
     palette = ["#FF6E6E", "#6EE273", "#73BEFF", "#FFC850", "#DC82FF", "#50E6D2", "#FF9650"]
